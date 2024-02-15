@@ -1,38 +1,69 @@
-import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
-import './App.css';
-import { inicialColumns } from './mock/initialData';
+import { useState } from 'react'
+import {
+  DragDropContext,
+  Draggable,
+  DropResult,
+  Droppable,
+} from 'react-beautiful-dnd'
+import './App.css'
+import { inicialColumns } from './mock/initialData'
 function App() {
 
- const onDragEnd = (result) => {
+  interface DraggItems { 
+    id: string
+    content: string
+  }
+
+  const [draggedItem, setDraggedItem] = useState({} as DraggItems)
+  const [columns, setColumns] = useState(inicialColumns)    
+
+
+  const onDragEnd = (result: DropResult) => {
+    console.log(result)
     // the only one that is required
-    const { destination, source, draggableId } = result;
-  
-    if (!destination) {
-      return;
+    const { destination, source, draggableId } = result
+
+    //se não mover
+    if (!destination) return;
+    
+    if (destination) {
+      const sourceColumnItems = columns[0].items
+      
+      for (const i in sourceColumnItems) {
+        if (sourceColumnItems[i].id === result.draggableId) {
+          setDraggedItem(sourceColumnItems[i])
+        }
+      }
+
+      //remove drag object
+      const filteredColumns = sourceColumnItems.filter(
+        (i) => i.id !== result.draggableId
+      )
+        console.log('filteredColumns', filteredColumns)
+
+      //adding in new position
+      filteredColumns.splice(destination.index, 0, draggedItem)
+      //update state
+      setColumns([{ ...columns[0], items: filteredColumns }])
+      
+      console.log('draggedItem', draggedItem)
+
     }
-  
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-  
-    // More logic here to handle the result of the drag and drop
+
+    //More logic here to handle the result of the drag and drop
   }
 
   return (
     <div>
       <p>trello clone</p>
       <DragDropContext onDragEnd={onDragEnd}>
-        {inicialColumns.map((col) => (
+        {columns.map((col) => (
           <Droppable
             key={col.id}
-            droppableId={col.id.toString()}
+            droppableId={col.id}
           >
             {(provided) => (
               <div
-              {...provided.droppableProps}
                 ref={provided.innerRef}
                 key={col.id}
                 style={{
@@ -52,18 +83,21 @@ function App() {
                   }}
                 >
                   {col.items.map((item, i) => (
-                    <Draggable draggableId={item.id} index={i}>
+                    <Draggable
+                      draggableId={item.id}
+                      index={i}
+                    >
                       {(provided) => (
                         <div
-                        {...provided.dragHandleProps}
-                        {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          {...provided.draggableProps}
                           ref={provided.innerRef}
                           key={item.id}
                           style={{
                             backgroundColor: 'white',
                             height: 20,
                             marginBottom: 10,
-                            ...provided.draggableProps.style
+                            ...provided.draggableProps.style,
                           }}
                         >
                           {item.content}
@@ -72,6 +106,7 @@ function App() {
                     </Draggable>
                   ))}
                 </div>
+                {provided.placeholder}
               </div>
             )}
           </Droppable>
