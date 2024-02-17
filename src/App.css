@@ -40,3 +40,8 @@
 .read-the-docs {
   color: #888;
 }
+
+.flex {
+  display: flex;
+  gap: 1em;
+}

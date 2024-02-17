@@ -8,53 +8,61 @@ import {
 import './App.css'
 import { inicialColumns } from './mock/initialData'
 function App() {
-
   interface DraggItems { 
     id: string
     content: string
   }
 
-  const [draggedItem, setDraggedItem] = useState({} as DraggItems)
   const [columns, setColumns] = useState(inicialColumns)    
 
-
   const onDragEnd = (result: DropResult) => {
-    console.log(result)
     // the only one that is required
     const { destination, source, draggableId } = result
 
     //se não mover
     if (!destination) return;
+    //se mover para o mesmo lugar
+    if (
+			destination.droppableId === source.droppableId &&
+			destination.index === source.index
+		) {
+			return;
+		}
     
-    if (destination) {
-      const sourceColumnItems = columns[0].items
-      
-      for (const i in sourceColumnItems) {
-        if (sourceColumnItems[i].id === result.draggableId) {
-          setDraggedItem(sourceColumnItems[i])
-        }
-      }
+    //reorder our columns
+    const column = columns.find(
+      (col) => col.id.toString() === source.droppableId
+    )
+    const items = Array.from(column!.items)
+    const [removed] = items.splice(source.index, 1)
+    items.splice(destination.index, 0, removed) 
+    column!.items = items
+    setColumns([...columns])
+
+    console.log('columns', columns)
+    console.log(items, 'items')
+
+
+    // const confirm = window.confirm(
+		// 	`Deseja realmente alterar o status da tarefa para ${column.name.toLocaleLowerCase()} ?`
+		// );
+		// if (!confirm) return
+
+ 
 
       //remove drag object
-      const filteredColumns = sourceColumnItems.filter(
-        (i) => i.id !== result.draggableId
-      )
-        console.log('filteredColumns', filteredColumns)
+      // const filteredColumns = columns.filter(
+      //   (i) => i.id !== result.draggableId
+      // )
+      //   console.log('filteredColumns', filteredColumns)
 
-      //adding in new position
-      filteredColumns.splice(destination.index, 0, draggedItem)
-      //update state
-      setColumns([{ ...columns[0], items: filteredColumns }])
-      
-      console.log('draggedItem', draggedItem)
-
-    }
+    
 
     //More logic here to handle the result of the drag and drop
   }
 
   return (
-    <div>
+    <div className='flex'>
       <p>trello clone</p>
       <DragDropContext onDragEnd={onDragEnd}>
         {columns.map((col) => (
@@ -65,6 +73,7 @@ function App() {
             {(provided) => (
               <div
                 ref={provided.innerRef}
+                {...provided.droppableProps}
                 key={col.id}
                 style={{
                   display: 'flex',
@@ -89,8 +98,8 @@ function App() {
                     >
                       {(provided) => (
                         <div
-                          {...provided.dragHandleProps}
-                          {...provided.draggableProps}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
                           ref={provided.innerRef}
                           key={item.id}
                           style={{
